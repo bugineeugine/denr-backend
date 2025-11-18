@@ -3,7 +3,12 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
+use App\Repositories\UserRepositoryInterface;
+use App\Repositories\PermitRepositoryInterface;
+use App\Repositories\CommentRepositoryInterface;
+use App\Repositories\Implementations\UserRepository;
+use App\Repositories\Implementations\PermitRepository;
+use App\Repositories\Implementations\CommentRepository;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -11,7 +16,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+       $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
+       $this->app->bind(PermitRepositoryInterface::class, PermitRepository::class);
+       $this->app->bind(CommentRepositoryInterface::class, CommentRepository::class);
+
     }
 
     /**
@@ -19,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+
+
     }
 }
