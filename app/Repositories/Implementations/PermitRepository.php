@@ -72,7 +72,9 @@ class PermitRepository implements PermitRepositoryInterface
         ->get();
 
         $dashboard['permitsByYear'] = $permitsByYear;
-
+        $dashboard['allPermit'] = Permit::where('status', '!=', 'Cancelled')
+        ->orderBy('created_at', 'desc')
+        ->get();
         return $dashboard;
     }
 
@@ -126,24 +128,21 @@ class PermitRepository implements PermitRepositoryInterface
 
             $dashboard['permitsByYear'] = $permitsByYear;
 
+
             return $dashboard;
         }
 
          public function getPermitByUserId($userId)
         {
-
-               $permits = Permit::where('created_by', $userId)->get();
-
-
-            return $permits;
+              return Permit::where('created_by', $userId)
+                    ->orderBy('created_at', 'desc')
+                    ->get();
         }
 
 
          public function findPermitById($pertmiId)
         {
-
-               $permits = Permit::where('permit_no', $pertmiId)->first();
-
+            $permits = Permit::where('permit_no', $pertmiId)->first();
 
             return $permits;
         }

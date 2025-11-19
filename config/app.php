@@ -15,7 +15,7 @@ return [
     | any other location as required by the application or its packages.
     |
     */
-
+    'frontend_url' => env('APP_URL_FRONTEND', 'http://localhost:3000'),
     'name' => env('APP_NAME', 'Laravel'),
 
     /*

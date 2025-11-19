@@ -76,7 +76,7 @@ class PermitController extends Controller
 
                 }
             }
-            $permitUrl = url('/permit/' . $permit_no);
+            $permitUrl = config('app.frontend_url') . '/permit/' . $permit_no;
             $fileName = $permit_no . '.png';
             $filePath = $folder . '/' . $fileName;
 

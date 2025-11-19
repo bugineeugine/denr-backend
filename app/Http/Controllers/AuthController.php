@@ -58,6 +58,36 @@ class AuthController extends Controller
         }
     }
 
+
+    public function updateSettings(Request $request)
+    {
+        try{
+            $data = $request->all();
+            $email = $data['email'];
+            $auth = auth()->user();
+            $checkExistEmail = $this->users->findEmailById($email,$auth['id'] );
+            if($checkExistEmail){
+                return response()->json([
+                    'message' => 'Email already exist'
+                ], 400);
+            }
+            if (isset($data['password'])) {
+                $data['password'] = Hash::make($data['password']);
+            }
+
+            $user = $this->users->findAndUpdateUserById($auth['id'], $data);
+              return response()->json([
+                'message' => 'User updated successfully.',
+                'data' => $user
+            ]);
+        }catch(\Exception $e){
+            return response()->json([
+                'error' => 'Something went wrong',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function userdata(Request $request){
             $auth = auth()->user();
             logger()->info('AUTH USERS', ['user' => $auth]);
@@ -85,6 +115,7 @@ class AuthController extends Controller
 
     public function register(Request $request){
         try{
+
             $validated = $request->validate([
                 'email' => 'required|string|unique:users,email',
                 'password' => 'required|string|min:8',

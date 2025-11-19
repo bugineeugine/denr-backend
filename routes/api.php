@@ -21,6 +21,7 @@ use App\Http\Controllers\UserController;
 Route::prefix('auth')->controller(AuthController::class)->group(function () {
     Route::post('/login', 'login');
     Route::middleware(['jwt.verified','jwt.cookie'])->get('/user-data', 'userdata');
+      Route::middleware(['jwt.verified','jwt.cookie'])->post('/settings', 'updateSettings');
 });
 Route::prefix('comments')->controller(CommentController::class)->group(function () {
     Route::get('/{pertmiId}', 'getCommentByPermitId');
