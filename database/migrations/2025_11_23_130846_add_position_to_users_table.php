@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('comments', function (Blueprint $table) {
-                   $table->string('permit_id')->after('user_id');
+        Schema::table('users', function (Blueprint $table) {
+             $table->string('position')->nullable()->after('role');
         });
     }
 
@@ -20,9 +20,9 @@ return new class extends Migration
      * Reverse the migrations.
      */
     public function down(): void
-{
-    Schema::table('comments', function (Blueprint $table) {
-        $table->dropColumn('permit_id');
-    });
-}
+    {
+        Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('position');
+        });
+    }
 };

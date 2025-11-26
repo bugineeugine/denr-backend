@@ -36,10 +36,11 @@ class UserController extends Controller
                 'email' => 'required|string|email:rfc,dns|unique:users,email',
                 'password' => 'required|string|min:8',
                 'name' => 'required|string',
-                'role' => 'required|string'
+                'role' => 'required|string',
+                'position' => 'nullable|string|required_if:role,officer',
             ],[
                 'email.unique' => 'Email already used. Please choose another one.',
-
+                'position.required_if' => 'Position is required when role is officer.',
             ]);
 
 
@@ -87,8 +88,9 @@ class UserController extends Controller
             $validated = $request->validate([
                 'name' => 'sometimes|string',
                 'email' => 'sometimes|string|min:6|unique:users,email,' . $userId,
-                'role' => 'sometimes|string|in:admin,validator',
-                 'password' => 'sometimes|string|min:8',
+                'role' => 'required|string',
+                'password' => 'sometimes|string|min:8',
+                'position' => 'nullable|string|required_if:role,officer',
             ]);
 
             if (isset($validated['password'])) {

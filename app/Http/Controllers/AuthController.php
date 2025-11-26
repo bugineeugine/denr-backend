@@ -97,13 +97,16 @@ class AuthController extends Controller
             }
             $permissions = [];
             if($user['role'] == 'admin'){
-                array_push($permissions, "canViewUsers", "canDeletePermit", "canViewPermits","canEditPermit","canViewDashboard");
+                array_push($permissions, "canViewUsers", "canDeletePermit", "canViewPermits","canEditPermit","canViewDashboard","canViewCitizen");
             };
               if($user['role'] == 'validator'){
                 array_push($permissions, "canViewPermits","canViewDashboard");
             };
             if($user['role'] == 'applicant'){
-                array_push($permissions, "canViewHome","canApplicationForm");
+                array_push($permissions, "canViewHome","canApplicationForm","canCitizenCharter");
+            };
+              if($user['role'] == 'officer'){
+               array_push($permissions,"canViewDashboard","canViewCitizen","canViewForApproval","canViewHistoryApprove");
             };
             $user['permissions'] = $permissions;
             return response()->json([

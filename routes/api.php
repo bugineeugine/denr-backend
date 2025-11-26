@@ -7,6 +7,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\CitizenCharterController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -25,7 +26,7 @@ Route::prefix('auth')->controller(AuthController::class)->group(function () {
 });
 Route::prefix('comments')->controller(CommentController::class)->group(function () {
     Route::get('/{pertmiId}', 'getCommentByPermitId');
- Route::post('/', 'create');
+    Route::post('/', 'create');
 });
 
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('dashboard')->controller(DashboardController::class)->group(function () {
@@ -49,6 +50,17 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('permits')->controller(
     Route::get('/{id}', 'getPermitByUserId');
     Route::get('/find/{id}', 'findPermitById');
 });
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('citizen-charter')->controller(CitizenCharterController::class)->group(function () {
+    Route::post('/', 'create');
+    Route::get('/', 'getCitizenCharterByUserById');
+    Route::get('/lists', 'getCitizenCharter');
+    Route::get('/by-position', 'getCitizenCharterForApproval');
+        Route::get('/history-approved', 'historyApproved');
+    Route::put('/{id}', 'findAndUpdateById');
+});
+
+
 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
