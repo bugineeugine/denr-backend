@@ -50,7 +50,9 @@ class Permit extends Model
         'certificateBarangay',
         'orCr',
         'driverLicense',
-        'otherDocuments'
+        'otherDocuments',
+        'status_step',
+        'steps'
     ];
        public function creator()
     {

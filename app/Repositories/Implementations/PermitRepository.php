@@ -134,7 +134,7 @@ class PermitRepository implements PermitRepositoryInterface
 
          public function getPermitByUserId($userId)
         {
-              return Permit::where('created_by', $userId)
+              return Permit::with('creator:id,name,email')->where('created_by', $userId)
                     ->orderBy('created_at', 'desc')
                     ->get();
         }
@@ -146,6 +146,18 @@ class PermitRepository implements PermitRepositoryInterface
 
             return $permits;
         }
+
+        public function getPermitBySteps(array $steps = [])
+        {
+            $query = Permit::with('creator');
+
+            if (!empty($steps)) {
+                $query->whereIn('steps', $steps);
+            }
+
+            return $query->get();
+        }
+
 
 
 

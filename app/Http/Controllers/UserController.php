@@ -33,7 +33,7 @@ class UserController extends Controller
     {
         try{
             $validated = $request->validate([
-                'email' => 'required|string|email:rfc,dns|unique:users,email',
+                'email' => 'required|string|email|unique:users,email',
                 'password' => 'required|string|min:8',
                 'name' => 'required|string',
                 'role' => 'required|string',

@@ -46,10 +46,17 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('permits')->controller(
     Route::get('/', 'index');
     Route::post('/', 'create');
     Route::put('/{id}', 'findAndUpdateById');
+    Route::put('/approve/{id}', 'findAndUpdatePermitById');
     Route::delete('/{id}', 'findAndDeleteById');
     Route::get('/{id}', 'getPermitByUserId');
     Route::get('/find/{id}', 'findPermitById');
+    Route::get('/history/steps/{id}', 'historyApprovedByPermitId');
+    Route::get('/approval/steps', 'getCitizenCharterForApproval');
+
+
 });
+
+
 
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('citizen-charter')->controller(CitizenCharterController::class)->group(function () {
     Route::post('/', 'create');

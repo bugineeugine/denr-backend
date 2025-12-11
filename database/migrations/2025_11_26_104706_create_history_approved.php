@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('history_approved', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('citizenCharterId');
+            $table->string('permit_id');
             $table->string('action');
             $table->uuid('approved_by');
+             $table->integer('steps');
              $table->timestamps();
             $table->foreign('approved_by')
             ->references('id')

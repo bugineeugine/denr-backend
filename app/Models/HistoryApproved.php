@@ -13,9 +13,11 @@ class HistoryApproved extends Model
 
     protected $table = 'history_approved';
         protected $fillable = [
-        'citizenCharterId',
+        'permit_id',
         'action',
         'approved_by',
+        'steps',
+
     ];
 
 

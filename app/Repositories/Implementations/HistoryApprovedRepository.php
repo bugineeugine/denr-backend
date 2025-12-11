@@ -13,7 +13,12 @@ class HistoryApprovedRepository implements HistoryApprovedRepositoryInterface
         return HistoryApproved::create($data);
     }
 
-
+  public function findById(string $id)
+    {
+        return HistoryApproved::with('creator:id,name,email')->where('petmit_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 
 
 }

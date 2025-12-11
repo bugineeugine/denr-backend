@@ -12,6 +12,7 @@ interface PermitRepositoryInterface
     public function findAndDeletePermitById(string $userId);
     public function getAllPermitsDashboardByUser(string $userId);
     public function getPermitByUserId(string $userId);
+    public function getPermitBySteps(array $steps = []);
 
 
 }

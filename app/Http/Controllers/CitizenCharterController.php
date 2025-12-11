@@ -153,7 +153,7 @@ class CitizenCharterController extends Controller
 
 
              if($steps == 0){
-                $action = 'Forward toChief RPS (CENRO)/Chief TSD (Imp';
+                $action = 'Forward toChief RPS (CENRO)/Chief TSD (Implementing PENRO)';
             }
 
             if($steps == 1){
@@ -169,7 +169,7 @@ class CitizenCharterController extends Controller
             }
 
             if($steps == 4){
-                $action = 'nspect the forest products in the area, and prepare Inspection Report, and Certificate of Verification (COV) and affix initial duplicate copy of COV';
+                $action = 'Inspect the forest products in the area, and prepare Inspection Report, and Certificate of Verification (COV) and affix initial duplicate copy of COV';
             }
 
             if($steps == 5){
@@ -222,13 +222,13 @@ class CitizenCharterController extends Controller
         try{
             $user = auth()->user();
             $history = HistoryApproved::join('users', 'history_approved.approved_by', '=', 'users.id')
-            ->join('citizen_charter', 'history_approved.citizenCharterId', '=', 'citizen_charter.id')
+            ->join('permits', 'history_approved.permit_id', '=', 'permits.id')
             ->where('history_approved.approved_by', $user['id'])
             ->select(
                 'history_approved.*',
                 'users.name as approver_name',
-                'citizen_charter.citizen_no',
-                'citizen_charter.status'
+                'permits.permit_no',
+                'permits.status'
             )
              ->orderBy('history_approved.created_at', 'desc')
             ->get();
