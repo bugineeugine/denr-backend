@@ -142,7 +142,7 @@ class PermitRepository implements PermitRepositoryInterface
 
          public function findPermitById($pertmiId)
         {
-            $permits = Permit::where('permit_no', $pertmiId)->first();
+            $permits = Permit::with('creator')->where('permit_no', $pertmiId)->first();
 
             return $permits;
         }

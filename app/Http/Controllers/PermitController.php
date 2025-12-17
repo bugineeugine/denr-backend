@@ -10,12 +10,26 @@ use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Writer\PngWriter;
 use App\Models\HistoryApproved;
 use Illuminate\Support\Str;
+use App\Providers\PHPMailerService;
 class PermitController extends Controller
 {
     protected $permits;
 
     public function __construct(PermitRepositoryInterface $permits){
         $this->permits = $permits;
+    }
+
+      public function send(PHPMailerService $mailer)
+    {
+        $success = $mailer->send(
+            'bugineeugine06@gmail.com',
+            'Laravel PHPMailer Test',
+            '<h2>Hello!</h2><p>Email sent from Laravel using PHPMailer.</p>'
+        );
+
+        return $success
+            ? response()->json(['message' => 'Email sent'])
+            : response()->json(['message' => 'Failed to send email'], 500);
     }
     public function index(){
         try{
@@ -34,6 +48,8 @@ class PermitController extends Controller
     }
     public function create(Request $request){
         try{
+
+
             $user = auth()->user();
             logger()->info('AUTH USER', ['user' => auth()->user()]);
             $userId = $user['id'];
@@ -249,7 +265,7 @@ class PermitController extends Controller
     }
 
 
-    public function findAndUpdatePermitById(Request $request,string $petmitId){
+    public function findAndUpdatePermitById(Request $request,string $petmitId,PHPMailerService $mailer){
         try{
 
             $data = $request->all();
@@ -303,9 +319,58 @@ class PermitController extends Controller
                 $data['steps'] = $steps + 1;
             }
 
+            $permit_no = $findPrmitById["permit_no"];
             if($steps == 8){
                 $data['steps']  = 9;
-                 $action = 'Done';
+                $action = 'Done';
+                 $subject = "Notice of Approval Permit Application No. {$permit_no}";
+            $body = "
+                <p>Good day,</p>
+
+                <p>
+                    This is to formally inform you that your permit application with
+                    application number <strong>{$permit_no}</strong> has been
+                    <strong>approved</strong> and is now marked as <strong>Completed</strong>.
+                </p>
+
+                <p>
+                    Please wait for further instructions or proceed to the
+                    appropriate office for the release of your approved documents,
+                    as may be applicable.
+                </p>
+
+                <br>
+
+                <p>
+                    Thank you.
+                </p>
+
+                <p>
+                    <strong>
+                        Department of Environment and Natural Resources (DENR)<br>
+                        Community Environment and Natural Resources Office (CENRO)
+                    </strong>
+                </p>
+
+                <hr>
+
+                <small>
+                    This is a system-generated email. Please do not reply.
+                </small>
+            ";
+
+                      $success = $mailer->send(
+                    $findPrmitById["creator"]["email"],
+                    $subject,
+                    $body
+                );
+                    if(!$success){
+                    return response()->json([
+                        'error' => 'Something went wrong',
+                        'message' =>"'Something went wrong'"
+                    ], 500);
+                    }
+
             }
 
 
