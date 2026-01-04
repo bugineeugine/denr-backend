@@ -49,7 +49,7 @@ class PermitSeeder extends Seeder
                 'grand_total' => $faker->numberBetween(5000, 500000),
                 'remaning_balance' => $faker->numberBetween(0, 50000),
                 'issued_date' => $createdAt->format('Y-m-d'),
-                'status' => $faker->randomElement(['Active', 'Expired','Used','Cancelled']),
+                'status' => $faker->randomElement(['Pending', 'Expired','Approved','Cancelled']),
                 'qrcode' => 'PERMIT-2025-00001.png',
                 'lng' => $faker->longitude,
                 'lat' => $faker->latitude,

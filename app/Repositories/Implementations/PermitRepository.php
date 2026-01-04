@@ -66,7 +66,7 @@ class PermitRepository implements PermitRepositoryInterface
         ->groupBy('status')
         ->orderBy('status', 'asc')
         ->get();
-        $dashboard['latestPermits'] = Permit::select('permit_type', 'created_at', 'status','id','permit_no')
+        $dashboard['latestPermits'] = Permit::select('*')
         ->orderBy('created_at', 'desc')
         ->limit(10)
         ->get();
@@ -120,8 +120,8 @@ class PermitRepository implements PermitRepositoryInterface
                 ->get();
 
 
-            $dashboard['latestPermits'] = Permit::where('created_by', $userId)
-                ->select('permit_type', 'created_at', 'status','id','permit_no')
+            $dashboard['latestPermits'] = Permit::with('creator:id,name,email')->where('created_by', $userId)
+                ->select('*')
                 ->orderBy('created_at', 'desc')
                 ->limit(10)
                 ->get();

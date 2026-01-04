@@ -27,7 +27,7 @@ return new class extends Migration
             $table->string('grand_total')->default('');
             $table->string('remaning_balance')->default('');
             $table->string('issued_date')->default('');
-            $table->string('status')->default('Active');
+            $table->string('status')->default('Pending');
             $table->string('qrcode');
             $table->float('lng');
             $table->float('lat');
