@@ -322,6 +322,7 @@ class PermitController extends Controller
             $permit_no = $findPrmitById["permit_no"];
             if($steps == 8){
                 $data['steps']  = 9;
+                $data['status'] = 'Approved';
                 $action = 'Done';
                  $subject = "Notice of Approval Permit Application No. {$permit_no}";
             $body = "
