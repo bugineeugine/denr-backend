@@ -193,10 +193,15 @@ class PermitController extends Controller
     }
       public function findPermitById(string $permitId){
         try{
-            $permits = $this->permits->findPermitById($permitId);
+            $permit = $this->permits->findPermitById($permitId);
+            if (!$permit) {
+                return response()->json([
+                    'message' => 'Permit not found'
+                ], 404);
+            }
             return response()->json([
              'message' => 'Retrieve successfully!',
-                'data' => $permits
+                'data' => $permit
             ], 200);
         }  catch (\Exception $e) {
             return response()->json([
