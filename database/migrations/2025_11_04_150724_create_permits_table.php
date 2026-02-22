@@ -20,6 +20,8 @@ return new class extends Migration
             $table->string('typeConveyancePlateNumber');
             $table->string('consignee');
             $table->string('species');
+            $table->string('landOwner');
+            $table->string('contactNumber');
             $table->string('dateOfTransport');
             $table->string('expiry_date')->default('');
             $table->string('issued_date')->default('');

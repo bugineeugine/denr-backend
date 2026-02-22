@@ -29,6 +29,8 @@ class Permit extends Model
         'typeConveyancePlateNumber',
         'consignee',
         'dateOfTransport',
+        'landOwner',
+        'contactNumber',
         'species',
         'issued_date',
         'lng',
