@@ -330,40 +330,33 @@ class PermitController extends Controller
                 $data['status'] = 'Approved';
                 $action = 'Done';
                  $subject = "Notice of Approval Permit Application No. {$permit_no}";
-            $body = "
-                <p>Good day,</p>
+           $body = "
+                    <p>Good day,</p>
 
-                <p>
-                    This is to formally inform you that your permit application with
-                    application number <strong>{$permit_no}</strong> has been
-                    <strong>approved</strong> and is now marked as <strong>Completed</strong>.
-                </p>
+                    <p>
+                        This is to formally inform you that your permit application with
+                        application number <strong>{$permit_no}</strong> has been
+                        <strong>approved</strong> and is now marked as <strong>Completed</strong>.
+                    </p>
 
-                <p>
-                    Please wait for further instructions or proceed to the
-                    appropriate office for the release of your approved documents,
-                    as may be applicable.
-                </p>
+                    <p>
+                        Please print the attached document from the website for the required signature.
+                        Once you have received this email, you may proceed to the office of
+                        <strong>DENR-CENRO</strong> at your convenience for the processing and release
+                        of your approved documents.
+                    </p>
 
-                <br>
+                    <br>
 
-                <p>
-                    Thank you.
-                </p>
+                    <p>Thank you.</p>
 
-                <p>
-                    <strong>
-                        Department of Environment and Natural Resources (DENR)<br>
-                        Community Environment and Natural Resources Office (CENRO)
-                    </strong>
-                </p>
-
-                <hr>
-
-                <small>
-                    This is a system-generated email. Please do not reply.
-                </small>
-            ";
+                    <p>
+                        <strong>
+                            Department of Environment and Natural Resources (DENR)<br>
+                            Community Environment and Natural Resources Office (CENRO)
+                        </strong>
+                    </p>
+                ";
 
                       $success = $mailer->send(
                     $findPrmitById["creator"]["email"],
