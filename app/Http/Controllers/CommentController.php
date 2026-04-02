@@ -37,8 +37,10 @@ class CommentController extends Controller
 
      public function create(Request $request)
     {
+        $user = auth()->user();
 
-        $data = $request->all();
+        $data = $request->only(['permit_id', 'comment']);
+        $data['user_id'] = $user['id'];
 
         $comments = $this->comments->create($data);
 

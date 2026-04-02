@@ -270,6 +270,67 @@ class PermitController extends Controller
     }
 
 
+    public function notifyExpired(string $permitId, PHPMailerService $mailer){
+        try {
+            $permit = Permit::with('creator')->find($permitId);
+
+            if (!$permit) {
+                return response()->json(['message' => 'Permit not found'], 404);
+            }
+
+            $permit_no   = $permit->permit_no;
+            $expiry_date = $permit->expiry_date ?? 'N/A';
+            $email       = $permit->creator->email;
+            $name        = $permit->creator->name;
+
+            $subject = "Notice of Expiration – Permit Application No. {$permit_no}";
+            $body = "
+                <p>Dear <strong>{$name}</strong>,</p>
+
+                <p>
+                    We wish to inform you that your permit with application number
+                    <strong>{$permit_no}</strong> has <strong>expired</strong> as of
+                    <strong>{$expiry_date}</strong>.
+                </p>
+
+                <p>
+                    If you wish to continue the activities covered by this permit, please visit the
+                    <strong>DENR-CENRO</strong> office at your earliest convenience to apply for a
+                    renewal or a new permit application.
+                </p>
+
+                <p>
+                    Should you have any questions or concerns, do not hesitate to contact our office.
+                </p>
+
+                <br>
+
+                <p>Thank you.</p>
+
+                <p>
+                    <strong>
+                        Department of Environment and Natural Resources (DENR)<br>
+                        Community Environment and Natural Resources Office (CENRO)
+                    </strong>
+                </p>
+            ";
+
+            $success = $mailer->send($email, $subject, $body);
+
+            if (!$success) {
+                return response()->json(['message' => 'Failed to send email'], 500);
+            }
+
+            return response()->json(['message' => 'Expiration notice sent successfully'], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error'   => 'Something went wrong',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function findAndUpdatePermitById(Request $request,string $petmitId,PHPMailerService $mailer){
         try{
 

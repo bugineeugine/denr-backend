@@ -24,8 +24,12 @@ Route::prefix('auth')->controller(AuthController::class)->group(function () {
     Route::middleware(['jwt.verified','jwt.cookie'])->get('/user-data', 'userdata');
       Route::middleware(['jwt.verified','jwt.cookie'])->post('/settings', 'updateSettings');
 });
+// Public: anyone can read comments (validator scanning QR)
 Route::prefix('comments')->controller(CommentController::class)->group(function () {
     Route::get('/{pertmiId}', 'getCommentByPermitId');
+});
+// Protected: only authenticated users can post comments
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('comments')->controller(CommentController::class)->group(function () {
     Route::post('/', 'create');
 });
 
@@ -42,6 +46,13 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('users')->controller(Us
     Route::put('/{id}', 'findAndUpdateUserById');
 });
 
+// Public permit routes (no auth required)
+Route::prefix('permits')->controller(PermitController::class)->group(function () {
+    Route::get('/find/{id}', 'findPermitById');
+    Route::get('/history/steps/{id}', 'historyApprovedByPermitId');
+    Route::post('/{id}/notify-expired', 'notifyExpired');
+});
+
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('permits')->controller(PermitController::class)->group(function () {
     Route::get('/', 'index');
     Route::post('/', 'create');
@@ -49,11 +60,7 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('permits')->controller(
     Route::put('/approve/{id}', 'findAndUpdatePermitById');
     Route::delete('/{id}', 'findAndDeleteById');
     Route::get('/{id}', 'getPermitByUserId');
-    Route::get('/find/{id}', 'findPermitById');
-    Route::get('/history/steps/{id}', 'historyApprovedByPermitId');
     Route::get('/approval/steps', 'getCitizenCharterForApproval');
-
-
 });
 
 
