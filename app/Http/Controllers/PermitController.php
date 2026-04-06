@@ -284,7 +284,7 @@ class PermitController extends Controller
             $name        = $permit->creator->name;
 
             $subject = "Notice of Expiration – Permit Application No. {$permit_no}";
-            $body = "
+           $body = "
                 <p>Dear <strong>{$name}</strong>,</p>
 
                 <p>
@@ -310,7 +310,8 @@ class PermitController extends Controller
                 <p>
                     <strong>
                         Department of Environment and Natural Resources (DENR)<br>
-                        Community Environment and Natural Resources Office (CENRO)
+                        Community Environment and Natural Resources Office (CENRO)<br>
+                        Brgy. Duhat, Santa Cruz, Laguna
                     </strong>
                 </p>
             ";
