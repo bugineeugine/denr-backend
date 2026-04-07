@@ -413,11 +413,12 @@ class PermitController extends Controller
                     <p>Thank you.</p>
 
                     <p>
-                        <strong>
-                            Department of Environment and Natural Resources (DENR)<br>
-                            Community Environment and Natural Resources Office (CENRO)
-                        </strong>
-                    </p>
+                    <strong>
+                        Department of Environment and Natural Resources (DENR)<br>
+                        Community Environment and Natural Resources Office (CENRO)<br>
+                        Brgy. Duhat, Santa Cruz, Laguna
+                    </strong>
+                </p>
                 ";
 
                       $success = $mailer->send(
