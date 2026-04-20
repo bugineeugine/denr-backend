@@ -11,6 +11,7 @@ use Endroid\QrCode\Writer\PngWriter;
 use App\Models\HistoryApproved;
 use Illuminate\Support\Str;
 use App\Providers\PHPMailerService;
+use App\Models\AppNotification;
 class PermitController extends Controller
 {
     protected $permits;
@@ -105,6 +106,16 @@ class PermitController extends Controller
             $result->saveToFile($filePath);
             $data['qrcode'] =  $fileName;
             $permits = $this->permits->create($data);
+
+            AppNotification::create([
+                'user_id' => $userId,
+                'type' => 'permit.submitted',
+                'title' => "Permit {$permit_no} submitted",
+                'message' => "Your permit application {$permit_no} has been submitted for review.",
+                'link' => '/permits',
+                'severity' => 'info',
+            ]);
+
             return response()->json([
                 'message' => 'Created successfully!',
                 'data' => $permits
@@ -332,6 +343,70 @@ class PermitController extends Controller
         }
     }
 
+    public function renew(string $permitId){
+        try {
+            $existing = Permit::find($permitId);
+            if (!$existing) {
+                return response()->json(['message' => 'Permit not found'], 404);
+            }
+
+            $user = auth()->user();
+            $nextId = Permit::count() + 1;
+            $newPermitNo = 'APP-' . date('Y') . '-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
+
+            $folder = public_path('storage/qrcodes');
+            if (!File::exists($folder)) {
+                File::makeDirectory($folder, 0777, true, true);
+            }
+            $permitUrl = config('app.frontend_url') . '/permit/' . $newPermitNo;
+            $fileName = $newPermitNo . '.png';
+            $filePath = $folder . '/' . $fileName;
+            try {
+                $result = Builder::create()
+                    ->writer(new PngWriter())
+                    ->data($permitUrl)
+                    ->size(200)
+                    ->margin(10)
+                    ->build();
+                $result->saveToFile($filePath);
+            } catch (\Exception $qrEx) {
+                // GD extension missing — reuse the existing permit's QR
+                $fileName = $existing->qrcode;
+            }
+
+            $issued = now();
+            $expiry = now()->addYear();
+
+            $newData = $existing->only([
+                'permit_type','typeForestProduct','estimatedVolumeQuantity',
+                'typeConveyancePlateNumber','consignee','dateOfTransport','landOwner',
+                'contactNumber','species','lng','lat','requestLetter',
+                'certificateBarangay','orCr','driverLicense','otherDocuments'
+            ]);
+
+            $newData['permit_no']    = $newPermitNo;
+            $newData['qrcode']       = $fileName;
+            $newData['created_by']   = $user['id'] ?? $existing->created_by;
+            $newData['status']       = 'Pending';
+            $newData['steps']        = 0;
+            $newData['status_step']  = 'Forward to PENR/CENR Officer/Deputy CENR Officer';
+            $newData['issued_date']  = $issued->format('m/d/Y');
+            $newData['expiry_date']  = $expiry->format('m/d/Y');
+
+            $renewed = Permit::create($newData);
+
+            return response()->json([
+                'message' => 'Permit renewal submitted successfully!',
+                'data' => $renewed,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Something went wrong',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function findAndUpdatePermitById(Request $request,string $petmitId,PHPMailerService $mailer){
         try{
 
@@ -437,6 +512,28 @@ class PermitController extends Controller
 
 
             $getPrmit = $this->permits->findAndUpdatePermitById($findPrmitById['id'], $data);
+
+            if (!empty($findPrmitById['created_by'])) {
+                if ($steps == 8) {
+                    AppNotification::create([
+                        'user_id' => $findPrmitById['created_by'],
+                        'type' => 'permit.approved',
+                        'title' => "Permit {$permit_no} approved",
+                        'message' => "Your permit {$permit_no} has been approved and is now ready for release.",
+                        'link' => '/permits',
+                        'severity' => 'success',
+                    ]);
+                } else {
+                    AppNotification::create([
+                        'user_id' => $findPrmitById['created_by'],
+                        'type' => 'permit.progress',
+                        'title' => "Permit {$permit_no} progressed",
+                        'message' => "Step update: {$action}",
+                        'link' => '/permits',
+                        'severity' => 'info',
+                    ]);
+                }
+            }
 
             HistoryApproved::create([
                 'action'=> $action,

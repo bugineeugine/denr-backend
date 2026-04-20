@@ -8,6 +8,8 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PermitController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CitizenCharterController;
+use App\Http\Controllers\ViolationController;
+use App\Http\Controllers\NotificationController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -61,6 +63,7 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('permits')->controller(
     Route::delete('/{id}', 'findAndDeleteById');
     Route::get('/{id}', 'getPermitByUserId');
     Route::get('/approval/steps', 'getCitizenCharterForApproval');
+    Route::post('/{id}/renew', 'renew');
 });
 
 
@@ -76,6 +79,23 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('citizen-charter')->con
 
 
 
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('notifications')->controller(NotificationController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::put('/read-all', 'markAllRead');
+    Route::put('/{id}/read', 'markRead');
+    Route::delete('/{id}', 'destroy');
+});
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('violations')->controller(ViolationController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::post('/', 'store');
+    Route::get('/reports', 'reports');
+    Route::get('/by-permit/{permitId}', 'byPermit');
+    Route::get('/{id}', 'show');
+    Route::put('/{id}', 'update');
+    Route::delete('/{id}', 'destroy');
+});
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
