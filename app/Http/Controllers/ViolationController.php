@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Repositories\ViolationRepositoryInterface;
+use App\Services\NotificationService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
@@ -90,11 +91,52 @@ class ViolationController extends Controller
     public function update(Request $request, string $id)
     {
         try {
-            $data = $request->all();
-            $violation = $this->violations->findAndUpdateViolationById($id, $data);
-            if (!$violation) {
+            $existing = $this->violations->findViolationById($id);
+            if (!$existing) {
                 return response()->json(['message' => 'Violation not found'], 404);
             }
+
+            $data = $request->only([
+                'status', 'severity', 'violation_type', 'description',
+                'location', 'violator_name', 'contact_number',
+            ]);
+
+            // Auto-stamp resolved_at when transitioning to Resolved
+            if (
+                isset($data['status']) &&
+                $data['status'] === 'Resolved' &&
+                $existing->status !== 'Resolved'
+            ) {
+                $data['resolved_at'] = now()->toDateString();
+            }
+
+            // Clear resolved_at if it's reopened
+            if (
+                isset($data['status']) &&
+                $data['status'] !== 'Resolved' &&
+                $existing->status === 'Resolved'
+            ) {
+                $data['resolved_at'] = null;
+            }
+
+            $violation = $this->violations->findAndUpdateViolationById($id, $data);
+
+            // Notify the permit owner about status change
+            if (
+                isset($data['status']) &&
+                $data['status'] !== $existing->status &&
+                $existing->permit_id &&
+                $existing->permit
+            ) {
+                NotificationService::notifyUser($existing->permit->created_by ?? '', [
+                    'type' => 'violation.status_changed',
+                    'title' => "Violation status: {$data['status']}",
+                    'message' => "The violation on your permit {$existing->permit->permit_no} is now marked as {$data['status']}.",
+                    'link' => '/permits',
+                    'severity' => $data['status'] === 'Resolved' ? 'success' : 'info',
+                ]);
+            }
+
             return response()->json([
                 'message' => 'Updated successfully!',
                 'data' => $violation,
@@ -137,6 +179,80 @@ class ViolationController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'error' => 'Something went wrong',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function reportPublic(Request $request, string $permitNo)
+    {
+        try {
+            $permit = \App\Models\Permit::where('permit_no', $permitNo)->first();
+            if (!$permit) {
+                return response()->json(['message' => 'Permit not found'], 404);
+            }
+
+            $user = auth()->user();
+            $data = $request->only([
+                'violator_name', 'contact_number', 'location', 'lat', 'lng',
+                'violation_type', 'severity', 'description',
+            ]);
+
+            $data['permit_id']     = $permit->id;
+            $data['date_recorded'] = now()->toDateString();
+            $data['status']        = 'Open';
+            $data['recorded_by']   = $user['id'] ?? $permit->created_by;
+
+            if (!empty($permit->lat) && empty($data['lat'])) $data['lat'] = $permit->lat;
+            if (!empty($permit->lng) && empty($data['lng'])) $data['lng'] = $permit->lng;
+
+            $violation = $this->violations->create($data);
+
+            // Notify the permit owner (applicant) — their permit got flagged
+            NotificationService::notifyUser($permit->created_by, [
+                'type'     => 'violation.reported',
+                'title'    => "Violation reported on {$permit->permit_no}",
+                'message'  => "A {$data['severity']} violation ({$data['violation_type']}) was recorded against your permit.",
+                'link'     => '/permits',
+                'severity' => 'critical',
+            ]);
+
+            // Notify staff/admin so they can review/investigate
+            NotificationService::notifyStaff([
+                'type'     => 'violation.new',
+                'title'    => "New violation on {$permit->permit_no}",
+                'message'  => "{$data['violation_type']} ({$data['severity']}) recorded against permit {$permit->permit_no}.",
+                'link'     => '/violations',
+                'severity' => $data['severity'] === 'Critical' ? 'critical' : 'warning',
+            ]);
+
+            return response()->json([
+                'message' => 'Violation reported successfully!',
+                'data'    => $violation,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error'   => 'Something went wrong',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function listPublicByPermitNo(string $permitNo)
+    {
+        try {
+            $permit = \App\Models\Permit::where('permit_no', $permitNo)->first();
+            if (!$permit) {
+                return response()->json(['message' => 'Permit not found'], 404);
+            }
+            $data = $this->violations->getViolationsByPermitId($permit->id);
+            return response()->json([
+                'message' => 'Retrieve successfully!',
+                'data'    => $data,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error'   => 'Something went wrong',
                 'message' => $e->getMessage(),
             ], 500);
         }

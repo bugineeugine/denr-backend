@@ -55,6 +55,12 @@ Route::prefix('permits')->controller(PermitController::class)->group(function ()
     Route::post('/{id}/notify-expired', 'notifyExpired');
 });
 
+// Public violation reporting (validator scans QR -> reports without admin login)
+Route::prefix('violations')->controller(ViolationController::class)->group(function () {
+    Route::get('/public/by-permit-no/{permitNo}', 'listPublicByPermitNo');
+    Route::post('/public/report/{permitNo}', 'reportPublic');
+});
+
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('permits')->controller(PermitController::class)->group(function () {
     Route::get('/', 'index');
     Route::post('/', 'create');

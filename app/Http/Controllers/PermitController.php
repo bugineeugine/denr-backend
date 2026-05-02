@@ -12,6 +12,7 @@ use App\Models\HistoryApproved;
 use Illuminate\Support\Str;
 use App\Providers\PHPMailerService;
 use App\Models\AppNotification;
+use App\Services\NotificationService;
 class PermitController extends Controller
 {
     protected $permits;
@@ -107,12 +108,21 @@ class PermitController extends Controller
             $data['qrcode'] =  $fileName;
             $permits = $this->permits->create($data);
 
-            AppNotification::create([
-                'user_id' => $userId,
+            // Confirmation to the applicant
+            NotificationService::notifyUser($userId, [
                 'type' => 'permit.submitted',
                 'title' => "Permit {$permit_no} submitted",
                 'message' => "Your permit application {$permit_no} has been submitted for review.",
                 'link' => '/permits',
+                'severity' => 'info',
+            ]);
+
+            // Heads-up to staff that there's a new application waiting
+            NotificationService::notifyStaff([
+                'type' => 'permit.new_for_review',
+                'title' => "New permit {$permit_no} for review",
+                'message' => "A new application by {$user['name']} requires review.",
+                'link' => '/for-approval',
                 'severity' => 'info',
             ]);
 
@@ -513,10 +523,10 @@ class PermitController extends Controller
 
             $getPrmit = $this->permits->findAndUpdatePermitById($findPrmitById['id'], $data);
 
+            // Only the applicant cares about progress/approval of their own permit
             if (!empty($findPrmitById['created_by'])) {
                 if ($steps == 8) {
-                    AppNotification::create([
-                        'user_id' => $findPrmitById['created_by'],
+                    NotificationService::notifyUser($findPrmitById['created_by'], [
                         'type' => 'permit.approved',
                         'title' => "Permit {$permit_no} approved",
                         'message' => "Your permit {$permit_no} has been approved and is now ready for release.",
@@ -524,8 +534,7 @@ class PermitController extends Controller
                         'severity' => 'success',
                     ]);
                 } else {
-                    AppNotification::create([
-                        'user_id' => $findPrmitById['created_by'],
+                    NotificationService::notifyUser($findPrmitById['created_by'], [
                         'type' => 'permit.progress',
                         'title' => "Permit {$permit_no} progressed",
                         'message' => "Step update: {$action}",
