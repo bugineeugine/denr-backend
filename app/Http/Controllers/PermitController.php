@@ -174,13 +174,8 @@ class PermitController extends Controller
                     'message' => 'Permit not found'
                 ], 404);
             }
-            $getPermit = $permitId['permit'];
-            $permitNo = $getPermit['permit_no'];
-            $filePath = public_path('storage/qrcodes/' . $permitNo . '.png');
-
-            if (File::exists($filePath)) {
-                File::delete($filePath);
-            }
+            // Soft-delete only — keep the QR file so it survives a restore.
+            // QR is removed permanently in ArchiveController::purgePermit().
             return response()->json([
                 'message' => 'Deleted successfully!',
                 'data' => null

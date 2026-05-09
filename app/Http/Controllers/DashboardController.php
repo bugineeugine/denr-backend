@@ -72,26 +72,21 @@ class DashboardController extends Controller
             ];
         }
 
-        $criticalCount = 0;
-        foreach ($vStats['bySeverity'] ?? [] as $row) {
-            if (in_array($row['severity'] ?? '', ['High', 'Critical'])) {
-                $criticalCount += (int)($row['total'] ?? 0);
-            }
-        }
-        if ($criticalCount > 0) {
-            $alerts[] = [
-                'level' => 'critical',
-                'title' => 'Critical/High severity cases',
-                'message' => "{$criticalCount} severe violation(s) recorded.",
-            ];
-        }
-
         $expiredCount = Permit::where('status', 'Expired')->count();
         if ($expiredCount >= 3) {
             $alerts[] = [
                 'level' => 'warning',
                 'title' => 'Frequent expired permits',
                 'message' => "{$expiredCount} permits are currently expired and may need renewal outreach.",
+            ];
+        }
+
+        $suspendedCount = Permit::where('status', 'Suspended')->count();
+        if ($suspendedCount >= 1) {
+            $alerts[] = [
+                'level' => 'high',
+                'title' => 'Suspended permits',
+                'message' => "{$suspendedCount} permit(s) currently suspended pending violation review.",
             ];
         }
 

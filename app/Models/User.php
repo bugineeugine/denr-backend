@@ -8,10 +8,11 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
-     use HasApiTokens, HasFactory, Notifiable, HasUuids;
+     use HasApiTokens, HasFactory, Notifiable, HasUuids, SoftDeletes;
     /**
      * The attributes that are mass assignable.
      *
@@ -22,7 +23,9 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'role',
-        'position'
+        'position',
+        'archived_by',
+        'archive_reason',
     ];
 
     /**

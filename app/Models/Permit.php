@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\SoftDeletes;
 class Permit extends Model
 {
-    use HasFactory; use HasUuids;
+    use HasFactory; use HasUuids; use SoftDeletes;
 
 
     protected $casts = [
@@ -48,7 +49,9 @@ class Permit extends Model
         'driverLicense',
         'otherDocuments',
         'status_step',
-        'steps'
+        'steps',
+        'archived_by',
+        'archive_reason',
     ];
        public function creator()
     {

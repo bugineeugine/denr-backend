@@ -121,6 +121,25 @@ class ViolationController extends Controller
 
             $violation = $this->violations->findAndUpdateViolationById($id, $data);
 
+            // Auto-restore permit to Approved when violation is resolved/dismissed
+            // (only if no other open violations remain on that permit)
+            if (
+                isset($data['status']) &&
+                in_array($data['status'], ['Resolved', 'Dismissed']) &&
+                $existing->permit_id
+            ) {
+                $stillOpen = \App\Models\Violation::where('permit_id', $existing->permit_id)
+                    ->where('id', '!=', $id)
+                    ->whereIn('status', ['Open', 'Investigating'])
+                    ->exists();
+                if (!$stillOpen) {
+                    $permit = \App\Models\Permit::find($existing->permit_id);
+                    if ($permit && $permit->status === 'Suspended') {
+                        $permit->update(['status' => 'Approved']);
+                    }
+                }
+            }
+
             // Notify the permit owner about status change
             if (
                 isset($data['status']) &&
@@ -207,6 +226,11 @@ class ViolationController extends Controller
             if (!empty($permit->lng) && empty($data['lng'])) $data['lng'] = $permit->lng;
 
             $violation = $this->violations->create($data);
+
+            // Auto-suspend the permit so it can't be used while under investigation
+            if (!in_array($permit->status, ['Suspended', 'Expired', 'Rejected'])) {
+                $permit->update(['status' => 'Suspended']);
+            }
 
             // Notify the permit owner (applicant) — their permit got flagged
             NotificationService::notifyUser($permit->created_by, [

@@ -32,7 +32,7 @@ class AuthController extends Controller
         }
          $permissions = [];
             if($user['role'] == 'admin'){
-                array_push($permissions, "canViewUsers", "canDeletePermit");
+                array_push($permissions, "canViewUsers", "canDeletePermit", "canViewArchive");
             };
             $user['permissions'] = $permissions;
 
@@ -97,7 +97,7 @@ class AuthController extends Controller
             }
             $permissions = [];
             if($user['role'] == 'admin'){
-                array_push($permissions, "canViewUsers", "canDeletePermit", "canViewPermits","canEditPermit","canViewDashboard","canViewCitizen");
+                array_push($permissions, "canViewUsers", "canDeletePermit", "canViewPermits","canEditPermit","canViewDashboard","canViewCitizen","canViewArchive");
             };
               if($user['role'] == 'validator'){
                 array_push($permissions, "canViewPermits","canViewDashboard");

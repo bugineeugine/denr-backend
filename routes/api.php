@@ -10,6 +10,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\CitizenCharterController;
 use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ArchiveController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -85,6 +86,15 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('citizen-charter')->con
 
 
 
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('archive')->controller(ArchiveController::class)->group(function () {
+    Route::get('/permits', 'permits');
+    Route::get('/users', 'users');
+    Route::post('/permits/{id}/restore', 'restorePermit');
+    Route::post('/users/{id}/restore', 'restoreUser');
+    Route::delete('/permits/{id}', 'purgePermit');
+    Route::delete('/users/{id}', 'purgeUser');
+});
 
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('notifications')->controller(NotificationController::class)->group(function () {
     Route::get('/', 'index');

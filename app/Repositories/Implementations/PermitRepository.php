@@ -32,6 +32,11 @@ class PermitRepository implements PermitRepositoryInterface
             return null;
         }
 
+        $user = auth()->user();
+        $permit->update([
+            'archived_by' => $user['id'] ?? null,
+        ]);
+
       return [
          'permit'=>$permit,
          'deletePermit'=>$permit->delete()

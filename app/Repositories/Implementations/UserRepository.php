@@ -33,6 +33,11 @@ class UserRepository implements UserRepositoryInterface
             return null;
         }
 
+        $authUser = auth()->user();
+        $user->update([
+            'archived_by' => $authUser['id'] ?? null,
+        ]);
+
       return $user->delete();
     }
 
