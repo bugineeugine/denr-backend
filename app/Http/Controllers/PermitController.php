@@ -139,17 +139,75 @@ class PermitController extends Controller
         }
 
     }
-    public function findAndUpdateById(Request $request,string $permitId){
+    public function findAndUpdateById(Request $request,string $permitId, PHPMailerService $mailer){
         try{
             $data = $request->all();
 
+            $existing = Permit::with('creator')->find($permitId);
+            if (!$existing) {
+                return response()->json(['message' => 'Permit not found'], 404);
+            }
+            $previousStatus = $existing->status;
+
             $permit = $this->permits->findAndUpdatePermitById($permitId, $data);
 
-            if (!$permit) {
-                return response()->json([
-                    'message' => 'Permit not found'
-                ], 404);
+            // Detect admin-driven status change to Expired
+            if (
+                isset($data['status']) &&
+                $data['status'] === 'Expired' &&
+                $previousStatus !== 'Expired' &&
+                !empty($existing->created_by)
+            ) {
+                NotificationService::notifyUser($existing->created_by, [
+                    'type' => 'permit.expired',
+                    'title' => "Permit {$existing->permit_no} marked as expired",
+                    'message' => "Your permit {$existing->permit_no} has been marked as expired and can no longer be used. Please apply for a renewal.",
+                    'link' => '/permits',
+                    'severity' => 'critical',
+                ]);
+
+                if (!empty($existing->creator) && !empty($existing->creator->email)) {
+                    $name    = $existing->creator->name;
+                    $expiry  = $existing->expiry_date ?? 'N/A';
+                    $subject = "Notice of Expiration  Permit {$existing->permit_no}";
+                    $body = "
+                        <p>Dear <strong>{$name}</strong>,</p>
+
+                        <p>
+                            This is to formally inform you that your permit
+                            <strong>{$existing->permit_no}</strong> has been marked as
+                            <strong>EXPIRED</strong> as of <strong>{$expiry}</strong>.
+                        </p>
+
+                        <p>
+                            <strong>Important:</strong> This permit is no longer valid for use.
+                            You may not transport, harvest, or perform any activity covered by
+                            this permit. Any continued use may constitute a violation.
+                        </p>
+
+                        <p>
+                            To continue your operations, please visit the
+                            <strong>DENR-CENRO</strong> office to file a renewal application
+                            or submit a new permit request through our online portal.
+                        </p>
+
+                        <p>For questions, please contact our office during business hours.</p>
+
+                        <br>
+                        <p>Thank you,</p>
+                        <p>
+                            <strong>
+                                Department of Environment and Natural Resources (DENR)<br>
+                                Community Environment and Natural Resources Office (CENRO)<br>
+                                Brgy. Duhat, Santa Cruz, Laguna<br>
+                                Phone: (049) 501-1234 · Email: cenro.santacruz@denr.gov.ph
+                            </strong>
+                        </p>
+                    ";
+                    $mailer->send($existing->creator->email, $subject, $body);
+                }
             }
+
             return response()->json([
                 'message' => 'Updated successfully!',
                 'data' => $permit
@@ -299,7 +357,7 @@ class PermitController extends Controller
             $email       = $permit->creator->email;
             $name        = $permit->creator->name;
 
-            $subject = "Notice of Expiration – Permit Application No. {$permit_no}";
+            $subject = "Notice of Expiration  Permit Application No. {$permit_no}";
            $body = "
                 <p>Dear <strong>{$name}</strong>,</p>
 

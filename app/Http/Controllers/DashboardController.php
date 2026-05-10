@@ -63,30 +63,84 @@ class DashboardController extends Controller
     private function buildDssAlerts(array $vStats): array
     {
         $alerts = [];
+        $today = Carbon::today();
 
-        if (($vStats['open'] ?? 0) >= 5) {
-            $alerts[] = [
-                'level' => 'high',
-                'title' => 'High open violations',
-                'message' => "{$vStats['open']} unresolved violations need attention.",
-            ];
-        }
+        // ── Per-permit expiry alerts (within next 7 days) ───────────
+        $expiringSoon = [];
+        Permit::where('status', 'Approved')
+            ->select('permit_no', 'expiry_date')
+            ->chunk(500, function ($rows) use (&$expiringSoon, $today) {
+                foreach ($rows as $row) {
+                    try {
+                        $exp = Carbon::createFromFormat('m/d/Y', $row->expiry_date);
+                        $diff = (int) $today->diffInDays($exp, false);
+                        if ($diff >= 0 && $diff <= 7) {
+                            $expiringSoon[] = ['permit_no' => $row->permit_no, 'days' => $diff];
+                        }
+                    } catch (\Exception $e) { /* skip */ }
+                }
+            });
 
-        $expiredCount = Permit::where('status', 'Expired')->count();
-        if ($expiredCount >= 3) {
+        // Sort soonest first
+        usort($expiringSoon, fn ($a, $b) => $a['days'] <=> $b['days']);
+
+        // Bulk summary
+        if (count($expiringSoon) >= 1) {
             $alerts[] = [
                 'level' => 'warning',
-                'title' => 'Frequent expired permits',
-                'message' => "{$expiredCount} permits are currently expired and may need renewal outreach.",
+                'title' => 'Permits expiring soon',
+                'message' => count($expiringSoon) . ' permit(s) will expire within 7 days.',
             ];
         }
 
-        $suspendedCount = Permit::where('status', 'Suspended')->count();
-        if ($suspendedCount >= 1) {
+        // Per-permit specific alerts (top 5 most urgent)
+        foreach (array_slice($expiringSoon, 0, 5) as $row) {
+            $when = $row['days'] === 0
+                ? 'today'
+                : ($row['days'] === 1 ? 'tomorrow' : "in {$row['days']} days");
+            $alerts[] = [
+                'level' => $row['days'] <= 1 ? 'critical' : 'warning',
+                'title' => "Permit {$row['permit_no']} expires {$when}",
+                'message' => "Notify the applicant to renew before expiration.",
+            ];
+        }
+
+        // ── Expired permits ─────────────────────────────────────────
+        $expiredPermits = Permit::where('status', 'Expired')
+            ->orderByDesc('updated_at')
+            ->limit(3)
+            ->pluck('permit_no')
+            ->all();
+        if (!empty($expiredPermits)) {
+            $total = Permit::where('status', 'Expired')->count();
             $alerts[] = [
                 'level' => 'high',
-                'title' => 'Suspended permits',
-                'message' => "{$suspendedCount} permit(s) currently suspended pending violation review.",
+                'title' => "{$total} expired permit(s)",
+                'message' => 'Recent: ' . implode(', ', $expiredPermits),
+            ];
+        }
+
+        // ── Suspended permits (per-permit) ──────────────────────────
+        $suspended = Permit::where('status', 'Suspended')
+            ->orderByDesc('updated_at')
+            ->limit(5)
+            ->pluck('permit_no')
+            ->all();
+        foreach ($suspended as $no) {
+            $alerts[] = [
+                'level' => 'high',
+                'title' => "Permit {$no} suspended",
+                'message' => 'Active violation pending review.',
+            ];
+        }
+
+        // ── Open violations ─────────────────────────────────────────
+        $open = $vStats['open'] ?? 0;
+        if ($open >= 5) {
+            $alerts[] = [
+                'level' => 'high',
+                'title' => "{$open} open violations",
+                'message' => 'Unresolved cases need investigation.',
             ];
         }
 

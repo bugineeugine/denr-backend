@@ -10,7 +10,22 @@ class PermitRepository implements PermitRepositoryInterface
 
     public function getAllPermits()
     {
-      return Permit::with('creator:id,name,email')->orderBy('created_at', 'desc')->get();
+      $permits = Permit::with('creator:id,name,email')->orderBy('created_at', 'desc')->get();
+      $this->attachViolationFlag($permits);
+      return $permits;
+    }
+
+    private function attachViolationFlag($permits)
+    {
+      $ids = $permits->pluck('id')->all();
+      if (empty($ids)) return;
+      $withOpen = \App\Models\Violation::whereIn('permit_id', $ids)
+          ->whereIn('status', ['Open', 'Investigating'])
+          ->pluck('permit_id')->unique()->all();
+      $set = array_flip($withOpen);
+      foreach ($permits as $p) {
+          $p->has_active_violation = isset($set[$p->id]);
+      }
     }
      public function create(array $data)
     {
@@ -147,9 +162,13 @@ class PermitRepository implements PermitRepositoryInterface
 
          public function findPermitById($pertmiId)
         {
-            $permits = Permit::with('creator')->where('permit_no', $pertmiId)->first();
-
-            return $permits;
+            $permit = Permit::with('creator')->where('permit_no', $pertmiId)->first();
+            if ($permit) {
+                $permit->has_active_violation = \App\Models\Violation::where('permit_id', $permit->id)
+                    ->whereIn('status', ['Open', 'Investigating'])
+                    ->exists();
+            }
+            return $permit;
         }
 
         public function getPermitBySteps(array $steps = [])

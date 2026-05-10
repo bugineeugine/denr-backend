@@ -213,7 +213,7 @@ class ViolationController extends Controller
 
             $user = auth()->user();
             $data = $request->only([
-                'violator_name', 'contact_number', 'location', 'lat', 'lng',
+                'violator_name', 'contact_number', 'vehicle_plate', 'location', 'lat', 'lng',
                 'violation_type', 'severity', 'description',
             ]);
 

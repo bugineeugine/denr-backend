@@ -21,6 +21,7 @@ class Violation extends Model
         'permit_id',
         'violator_name',
         'contact_number',
+        'vehicle_plate',
         'location',
         'lat',
         'lng',
