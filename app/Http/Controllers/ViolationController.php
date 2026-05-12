@@ -123,6 +123,7 @@ class ViolationController extends Controller
 
             // Auto-restore permit to Approved when violation is resolved/dismissed
             // (only if no other open violations remain on that permit)
+            $permitReactivated = false;
             if (
                 isset($data['status']) &&
                 in_array($data['status'], ['Resolved', 'Dismissed']) &&
@@ -136,6 +137,7 @@ class ViolationController extends Controller
                     $permit = \App\Models\Permit::find($existing->permit_id);
                     if ($permit && $permit->status === 'Suspended') {
                         $permit->update(['status' => 'Approved']);
+                        $permitReactivated = true;
                     }
                 }
             }
@@ -147,13 +149,40 @@ class ViolationController extends Controller
                 $existing->permit_id &&
                 $existing->permit
             ) {
-                NotificationService::notifyUser($existing->permit->created_by ?? '', [
-                    'type' => 'violation.status_changed',
-                    'title' => "Violation status: {$data['status']}",
-                    'message' => "The violation on your permit {$existing->permit->permit_no} is now marked as {$data['status']}.",
-                    'link' => '/permits',
-                    'severity' => $data['status'] === 'Resolved' ? 'success' : 'info',
-                ]);
+                $permitOwnerId = $existing->permit->created_by ?? null;
+                if ($permitOwnerId) {
+                    $permitNo = $existing->permit->permit_no;
+
+                    if ($data['status'] === 'Resolved') {
+                        $title   = "Violation resolved on {$permitNo}";
+                        $message = $permitReactivated
+                            ? "Good news! The violation on your permit {$permitNo} has been marked as Resolved. Your permit is now reactivated and ready to use."
+                            : "The violation on your permit {$permitNo} has been marked as Resolved.";
+                        $severity = 'success';
+                    } elseif ($data['status'] === 'Dismissed') {
+                        $title   = "Violation dismissed on {$permitNo}";
+                        $message = $permitReactivated
+                            ? "The violation on your permit {$permitNo} has been dismissed. Your permit is now reactivated and ready to use."
+                            : "The violation on your permit {$permitNo} has been dismissed.";
+                        $severity = 'success';
+                    } elseif ($data['status'] === 'Investigating') {
+                        $title    = "Violation on {$permitNo} under investigation";
+                        $message  = "An officer is now investigating the violation recorded on your permit {$permitNo}.";
+                        $severity = 'info';
+                    } else {
+                        $title    = "Violation status updated: {$data['status']}";
+                        $message  = "The violation on your permit {$permitNo} is now marked as {$data['status']}.";
+                        $severity = 'info';
+                    }
+
+                    NotificationService::notifyUser($permitOwnerId, [
+                        'type' => 'violation.status_changed',
+                        'title' => $title,
+                        'message' => $message,
+                        'link' => '/permits',
+                        'severity' => $severity,
+                    ]);
+                }
             }
 
             return response()->json([
