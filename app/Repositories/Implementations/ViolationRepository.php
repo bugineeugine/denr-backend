@@ -10,7 +10,11 @@ class ViolationRepository implements ViolationRepositoryInterface
 {
     public function getAllViolations()
     {
-        return Violation::with(['permit:id,permit_no,permit_type,created_by,status', 'recorder:id,name,email'])
+        return Violation::with([
+                'permit:id,permit_no,permit_type,created_by,status',
+                'recorder:id,name,email,role,position',
+                'updater:id,name,email,role,position',
+            ])
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -22,7 +26,11 @@ class ViolationRepository implements ViolationRepositoryInterface
 
     public function findViolationById(string $id)
     {
-        return Violation::with(['permit:id,permit_no,permit_type,created_by,status', 'recorder:id,name,email'])
+        return Violation::with([
+                'permit:id,permit_no,permit_type,created_by,status',
+                'recorder:id,name,email,role,position',
+                'updater:id,name,email,role,position',
+            ])
             ->find($id);
     }
 

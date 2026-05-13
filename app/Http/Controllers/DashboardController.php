@@ -87,9 +87,11 @@ class DashboardController extends Controller
         // Bulk summary
         if (count($expiringSoon) >= 1) {
             $alerts[] = [
-                'level' => 'warning',
-                'title' => 'Permits expiring soon',
+                'type'    => 'expiring_soon',
+                'level'   => 'warning',
+                'title'   => 'Permits expiring soon',
                 'message' => count($expiringSoon) . ' permit(s) will expire within 7 days.',
+                'count'   => count($expiringSoon),
             ];
         }
 
@@ -99,9 +101,11 @@ class DashboardController extends Controller
                 ? 'today'
                 : ($row['days'] === 1 ? 'tomorrow' : "in {$row['days']} days");
             $alerts[] = [
-                'level' => $row['days'] <= 1 ? 'critical' : 'warning',
-                'title' => "Permit {$row['permit_no']} expires {$when}",
-                'message' => "Notify the applicant to renew before expiration.",
+                'type'      => 'permit',
+                'permit_no' => $row['permit_no'],
+                'level'     => $row['days'] <= 1 ? 'critical' : 'warning',
+                'title'     => "Permit {$row['permit_no']} expires {$when}",
+                'message'   => "Notify the applicant to renew before expiration.",
             ];
         }
 
@@ -114,9 +118,11 @@ class DashboardController extends Controller
         if (!empty($expiredPermits)) {
             $total = Permit::where('status', 'Expired')->count();
             $alerts[] = [
-                'level' => 'high',
-                'title' => "{$total} expired permit(s)",
+                'type'    => 'expired',
+                'level'   => 'high',
+                'title'   => "{$total} expired permit(s)",
                 'message' => 'Recent: ' . implode(', ', $expiredPermits),
+                'count'   => $total,
             ];
         }
 
@@ -128,9 +134,11 @@ class DashboardController extends Controller
             ->all();
         foreach ($suspended as $no) {
             $alerts[] = [
-                'level' => 'high',
-                'title' => "Permit {$no} suspended",
-                'message' => 'Active violation pending review.',
+                'type'      => 'permit',
+                'permit_no' => $no,
+                'level'     => 'high',
+                'title'     => "Permit {$no} suspended",
+                'message'   => 'Active violation pending review.',
             ];
         }
 
@@ -138,13 +146,93 @@ class DashboardController extends Controller
         $open = $vStats['open'] ?? 0;
         if ($open >= 5) {
             $alerts[] = [
-                'level' => 'high',
-                'title' => "{$open} open violations",
+                'type'    => 'open_violations',
+                'level'   => 'high',
+                'title'   => "{$open} open violations",
                 'message' => 'Unresolved cases need investigation.',
+                'count'   => $open,
             ];
         }
 
         return $alerts;
+    }
+
+    /**
+     * Return the full list of permits behind a DSS alert.
+     * Types: expiring_soon | expired | suspended | open_violations | permit
+     */
+    public function dssDetails(Request $request, string $type)
+    {
+        try {
+            $payload = [];
+
+            if ($type === 'permit') {
+                $permitNo = $request->query('permit_no');
+                if (!$permitNo) {
+                    return response()->json(['message' => 'permit_no is required'], 422);
+                }
+                $permit = Permit::with('creator:id,name,email')
+                    ->where('permit_no', $permitNo)
+                    ->first();
+                $payload = $permit ? [$permit] : [];
+            }
+            elseif ($type === 'expired') {
+                $payload = Permit::with('creator:id,name,email')
+                    ->where('status', 'Expired')
+                    ->orderByDesc('updated_at')
+                    ->get();
+            }
+            elseif ($type === 'suspended') {
+                $payload = Permit::with('creator:id,name,email')
+                    ->where('status', 'Suspended')
+                    ->orderByDesc('updated_at')
+                    ->get();
+            }
+            elseif ($type === 'expiring_soon') {
+                $today = Carbon::today();
+                $found = collect();
+                Permit::with('creator:id,name,email')
+                    ->where('status', 'Approved')
+                    ->chunk(500, function ($rows) use (&$found, $today) {
+                        foreach ($rows as $row) {
+                            try {
+                                $exp = Carbon::createFromFormat('m/d/Y', $row->expiry_date);
+                                $diff = (int) $today->diffInDays($exp, false);
+                                if ($diff >= 0 && $diff <= 7) {
+                                    $row->days_until_expiry = $diff;
+                                    $found->push($row);
+                                }
+                            } catch (\Exception $e) { /* skip */ }
+                        }
+                    });
+                $payload = $found->sortBy('days_until_expiry')->values();
+            }
+            elseif ($type === 'open_violations') {
+                // Return the permits that have open/investigating violations
+                $permitIds = \App\Models\Violation::whereIn('status', ['Open', 'Investigating'])
+                    ->whereNotNull('permit_id')
+                    ->pluck('permit_id')
+                    ->unique()
+                    ->all();
+                $payload = Permit::with('creator:id,name,email')
+                    ->whereIn('id', $permitIds)
+                    ->orderByDesc('updated_at')
+                    ->get();
+            }
+            else {
+                return response()->json(['message' => 'Unknown DSS alert type'], 404);
+            }
+
+            return response()->json([
+                'message' => 'Retrieve successfully!',
+                'data'    => $payload,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error'   => 'Something went wrong',
+                'message' => $e->getMessage(),
+            ], 500);
+        }
     }
       public function permitUserById(string $userId)
     {

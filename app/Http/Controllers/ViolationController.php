@@ -102,6 +102,11 @@ class ViolationController extends Controller
                 'location', 'violator_name', 'contact_number',
             ]);
 
+            $authUser = auth()->user();
+            if ($authUser) {
+                $data['updated_by'] = $authUser['id'];
+            }
+
             // Auto-stamp resolved_at when transitioning to Resolved
             if (
                 isset($data['status']) &&

@@ -33,6 +33,7 @@ class Violation extends Model
         'status',
         'evidence',
         'recorded_by',
+        'updated_by',
     ];
 
     public function permit()
@@ -43,5 +44,10 @@ class Violation extends Model
     public function recorder()
     {
         return $this->belongsTo(User::class, 'recorded_by', 'id');
+    }
+
+    public function updater()
+    {
+        return $this->belongsTo(User::class, 'updated_by', 'id');
     }
 }

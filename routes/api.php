@@ -41,7 +41,8 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('comments')->controller
 
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('dashboard')->controller(DashboardController::class)->group(function () {
     Route::get('/', 'index');
-      Route::get('/{userId}', 'permitUserById');
+    Route::get('/dss-details/{type}', 'dssDetails');
+    Route::get('/{userId}', 'permitUserById');
 });
 Route::post('/register', [AuthController::class, 'register']);
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('users')->controller(UserController::class)->group(function () {
