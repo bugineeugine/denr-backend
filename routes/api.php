@@ -84,6 +84,7 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('citizen-charter')->con
     Route::get('/lists', 'getCitizenCharter');
     Route::get('/by-position', 'getCitizenCharterForApproval');
         Route::get('/history-approved', 'historyApproved');
+    Route::get('/all-approval-report', 'allApprovalReport');
     Route::put('/{id}', 'findAndUpdateById');
 });
 

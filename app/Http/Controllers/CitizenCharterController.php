@@ -245,4 +245,40 @@ class CitizenCharterController extends Controller
         }
     }
 
+    public function allApprovalReport(){
+        try{
+            // All approval events across the system, with applicant + officer info
+            $history = HistoryApproved::join('users as officers', 'history_approved.approved_by', '=', 'officers.id')
+                ->join('permits', 'history_approved.permit_id', '=', 'permits.id')
+                ->leftJoin('users as applicants', 'permits.created_by', '=', 'applicants.id')
+                ->select(
+                    'history_approved.id',
+                    'history_approved.permit_id',
+                    'history_approved.action',
+                    'history_approved.steps',
+                    'history_approved.created_at',
+                    'permits.permit_no',
+                    'permits.status',
+                    'permits.created_at as permit_submitted_at',
+                    'applicants.name as applicant_name',
+                    'applicants.email as applicant_email',
+                    'officers.name as officer_name',
+                    'officers.email as officer_email',
+                    'officers.position as officer_position'
+                )
+                ->orderBy('history_approved.created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'message' => 'Retrieve successfully!',
+                'data' => $history
+            ], 200);
+        }  catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Something went wrong',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }
