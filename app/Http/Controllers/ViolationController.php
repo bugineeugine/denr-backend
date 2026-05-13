@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Repositories\ViolationRepositoryInterface;
 use App\Services\NotificationService;
+use App\Providers\PHPMailerService;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
@@ -232,10 +233,10 @@ class ViolationController extends Controller
         }
     }
 
-    public function reportPublic(Request $request, string $permitNo)
+    public function reportPublic(Request $request, string $permitNo, PHPMailerService $mailer)
     {
         try {
-            $permit = \App\Models\Permit::where('permit_no', $permitNo)->first();
+            $permit = \App\Models\Permit::with('creator')->where('permit_no', $permitNo)->first();
             if (!$permit) {
                 return response()->json(['message' => 'Permit not found'], 404);
             }
@@ -269,6 +270,42 @@ class ViolationController extends Controller
                 'link'     => '/permits',
                 'severity' => 'critical',
             ]);
+
+            // Email the permit owner (applicant)
+            if (!empty($permit->creator->email)) {
+                $subject = "Violation Reported on Permit {$permit->permit_no}";
+                $body = "
+                    <p>Dear <strong>{$permit->creator->name}</strong>,</p>
+                    <p>
+                        We are writing to inform you that a violation has been reported against your permit
+                        <strong>{$permit->permit_no}</strong>.
+                    </p>
+                    <p>
+                        <strong>Violation type:</strong> {$data['violation_type']}<br>
+                        <strong>Date recorded:</strong> {$data['date_recorded']}
+                    </p>
+                    <p>
+                        <strong>Important:</strong> Your permit has been <strong>suspended</strong> while
+                        this case is reviewed. It cannot be used or downloaded until the violation is
+                        resolved or dismissed by an officer.
+                    </p>
+                    <p>
+                        Please visit the DENR-CENRO office immediately with a valid ID and a copy of
+                        your permit, along with any supporting documents related to the incident.
+                    </p>
+                    <br>
+                    <p>Thank you,</p>
+                    <p>
+                        <strong>
+                            Department of Environment and Natural Resources (DENR)<br>
+                            Community Environment and Natural Resources Office (CENRO)<br>
+                            Brgy. Duhat, Santa Cruz, Laguna<br>
+                            Phone: (049) 501-1234 · Email: cenro.santacruz@denr.gov.ph
+                        </strong>
+                    </p>
+                ";
+                $mailer->send($permit->creator->email, $subject, $body);
+            }
 
             // Notify staff/admin so they can review/investigate
             NotificationService::notifyStaff([

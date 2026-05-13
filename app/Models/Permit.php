@@ -52,6 +52,8 @@ class Permit extends Model
         'steps',
         'archived_by',
         'archive_reason',
+        'renewed_from',
+        'renewal_count',
     ];
        public function creator()
     {

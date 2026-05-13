@@ -11,6 +11,9 @@ use App\Http\Controllers\CitizenCharterController;
 use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ArchiveController;
+use App\Http\Controllers\BackupController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\DocumentArchiveController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -86,6 +89,22 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('citizen-charter')->con
 
 
 
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('backups')->controller(BackupController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::post('/', 'create');
+    Route::get('/{name}/download', 'download');
+    Route::post('/{name}/restore', 'restore');
+    Route::delete('/{name}', 'destroy');
+});
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('activity-logs')->controller(ActivityLogController::class)->group(function () {
+    Route::get('/', 'index');
+});
+
+Route::middleware(['jwt.verified','jwt.cookie'])->prefix('document-archive')->controller(DocumentArchiveController::class)->group(function () {
+    Route::get('/', 'index');
+});
 
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('archive')->controller(ArchiveController::class)->group(function () {
     Route::get('/permits', 'permits');

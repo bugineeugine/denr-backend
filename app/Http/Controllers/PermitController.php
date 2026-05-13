@@ -48,13 +48,15 @@ class PermitController extends Controller
             ], 500);
         }
     }
-    public function create(Request $request){
+    public function create(Request $request, PHPMailerService $mailer){
         try{
 
 
             $user = auth()->user();
             logger()->info('AUTH USER', ['user' => auth()->user()]);
             $userId = $user['id'];
+            $userEmail = $user['email'] ?? null;
+            $userName = $user['name'] ?? 'Applicant';
             $data = $request->except([
             'requestLetter', 'certificateBarangay', 'orCr', 'driverLicense', 'otherDocuments'
             ]);
@@ -125,6 +127,34 @@ class PermitController extends Controller
                 'link' => '/for-approval',
                 'severity' => 'info',
             ]);
+
+            // Email confirmation to the applicant
+            if ($userEmail) {
+                $subject = "Application Received – Permit No. {$permit_no}";
+                $body = "
+                    <p>Dear <strong>{$userName}</strong>,</p>
+                    <p>
+                        Thank you for submitting your permit application. We have received it
+                        and assigned it the application number <strong>{$permit_no}</strong>.
+                    </p>
+                    <p>
+                        Your application is now under review. You will receive updates via this
+                        email and through your in-app notifications as it progresses through the
+                        approval workflow.
+                    </p>
+                    <p>You may track the status of your application anytime by logging in to your account.</p>
+                    <br>
+                    <p>Thank you,</p>
+                    <p>
+                        <strong>
+                            Department of Environment and Natural Resources (DENR)<br>
+                            Community Environment and Natural Resources Office (CENRO)<br>
+                            Brgy. Duhat, Santa Cruz, Laguna
+                        </strong>
+                    </p>
+                ";
+                $mailer->send($userEmail, $subject, $body);
+            }
 
             return response()->json([
                 'message' => 'Created successfully!',

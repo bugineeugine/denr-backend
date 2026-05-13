@@ -13,6 +13,10 @@ use App\Repositories\Implementations\PermitRepository;
 use App\Repositories\Implementations\CommentRepository;
 use App\Repositories\Implementations\CitizenCharterRepository;
 use App\Repositories\Implementations\ViolationRepository;
+use App\Models\Permit;
+use App\Models\User;
+use App\Models\Violation;
+use App\Observers\ActivityObserver;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -32,7 +36,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-
-
+        Permit::observe(ActivityObserver::class);
+        User::observe(ActivityObserver::class);
+        Violation::observe(ActivityObserver::class);
     }
 }
