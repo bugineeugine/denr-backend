@@ -60,8 +60,10 @@ class AuthController extends Controller
                 60*24,
                 '/',
                 null,
-                false,
-                true
+                false,   // secure
+                true,    // httpOnly
+                false,   // raw
+                null     // samesite (null = no SameSite attribute set)
             );
         }catch(\Exception $e){
             return response()->json([
