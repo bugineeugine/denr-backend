@@ -45,6 +45,8 @@ Route::middleware(['jwt.verified','jwt.cookie'])->prefix('dashboard')->controlle
     Route::get('/{userId}', 'permitUserById');
 });
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
 Route::middleware(['jwt.verified','jwt.cookie'])->prefix('users')->controller(UserController::class)->group(function () {
     Route::get('/', 'index');
     Route::post('/', 'create');

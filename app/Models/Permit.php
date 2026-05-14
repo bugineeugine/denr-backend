@@ -54,6 +54,12 @@ class Permit extends Model
         'archive_reason',
         'renewed_from',
         'renewal_count',
+        'estimated_volume',
+        'quantity_pcs',
+        'type_conveyance',
+        'plate_number',
+        'consignee_name',
+        'destination',
     ];
        public function creator()
     {

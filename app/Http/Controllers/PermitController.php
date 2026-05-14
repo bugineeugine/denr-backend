@@ -61,6 +61,29 @@ class PermitController extends Controller
             'requestLetter', 'certificateBarangay', 'orCr', 'driverLicense', 'otherDocuments'
             ]);
 
+            // Backfill legacy combined columns (still NOT NULL in DB) from new split fields
+            $vol = trim((string)($data['estimated_volume'] ?? ''));
+            $qty = trim((string)($data['quantity_pcs'] ?? ''));
+            if ($vol !== '' || $qty !== '') {
+                $parts = [];
+                if ($vol !== '') $parts[] = "{$vol} cu.m";
+                if ($qty !== '') $parts[] = "{$qty} pcs";
+                $data['estimatedVolumeQuantity'] = implode(' / ', $parts);
+            }
+
+            $conv  = trim((string)($data['type_conveyance'] ?? ''));
+            $plate = trim((string)($data['plate_number'] ?? ''));
+            if ($conv !== '' || $plate !== '') {
+                $data['typeConveyancePlateNumber'] = trim($conv . ' ' . $plate);
+            }
+
+            $cName = trim((string)($data['consignee_name'] ?? ''));
+            $dest  = trim((string)($data['destination'] ?? ''));
+            if ($cName !== '' || $dest !== '') {
+                $parts = array_filter([$cName, $dest], fn ($v) => $v !== '');
+                $data['consignee'] = implode(' — ', $parts);
+            }
+
             $nextId = Permit::count() + 1;
             $permit_no = 'APP-' . date('Y') . '-' . str_pad($nextId, 5, '0', STR_PAD_LEFT);
             $data['permit_no'] = $permit_no;
@@ -474,7 +497,9 @@ class PermitController extends Controller
                 'permit_type','typeForestProduct','estimatedVolumeQuantity',
                 'typeConveyancePlateNumber','consignee','dateOfTransport','landOwner',
                 'contactNumber','species','lng','lat','requestLetter',
-                'certificateBarangay','orCr','driverLicense','otherDocuments'
+                'certificateBarangay','orCr','driverLicense','otherDocuments',
+                'estimated_volume','quantity_pcs','type_conveyance','plate_number',
+                'consignee_name','destination'
             ]);
 
             $newData['permit_no']    = $newPermitNo;

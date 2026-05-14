@@ -26,6 +26,9 @@ class User extends Authenticatable implements JWTSubject
         'position',
         'archived_by',
         'archive_reason',
+        'email_verification_code',
+        'email_verification_expires_at',
+        'email_verified_at',
     ];
 
     /**
